@@ -19,16 +19,30 @@ class TCPClient {
 
         DataOutputStream outToServer =
           new DataOutputStream(clientSocket.getOutputStream());
+        
 
-            sentence = inFromUser.readLine();
+        System.out.println("Enter your name: ");
+        String name = inFromUser.readLine();
+        outToServer.writeBytes(name + '\n');
 
-            outToServer.writeBytes(sentence + '\n');
+        for (int i = 0; i < 3; i++){
+          Thread.sleep(1000);
+          sentence = inFromUser.readLine();
+          
+          System.out.println("Sending Equation: " + sentence);
+          outToServer.writeBytes(sentence + '\n');
 
-            modifiedSentence = inFromServer.readLine();
+          modifiedSentence = inFromServer.readLine();
 
-            System.out.println("FROM SERVER: " + modifiedSentence);
+          System.out.println("FROM SERVER: " + modifiedSentence);
+        }
+          System.out.println("Terminating?");
+          outToServer.writeBytes("QUIT\n");
+          
+          clientSocket.close();
+          System.out.println("Connection closed");
 
-            clientSocket.close();
+            
 
           }
       }
