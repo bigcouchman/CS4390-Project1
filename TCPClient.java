@@ -25,6 +25,9 @@ class TCPClient {
         String name = inFromUser.readLine();
         outToServer.writeBytes(name + '\n');
 
+        String welcome = inFromServer.readLine();
+        System.out.println("Server: " + welcome);
+
         for (int i = 0; i < 3; i++){
           Thread.sleep(1000);
           sentence = inFromUser.readLine();

@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.*;
-import java.util.Date;
 
 class ClientHandler implements Runnable{
     private Socket socket;
@@ -20,7 +19,7 @@ class ClientHandler implements Runnable{
 
             String clientEquation;
             while ((clientEquation = clientInput.readLine()) != null){
-                if (clientEquation.equalsIgnoreCase("Exit")){
+                if (clientEquation.equalsIgnoreCase("QUIT")){
                     break;
                 }
                 System.out.println("Request from client " + clientName + ": " + clientEquation);
@@ -70,7 +69,7 @@ class TCPServer {
             ClientHandler handler = new ClientHandler(connectionSocket);
             Thread client = new Thread(handler);
             client.start();
-            welcomeSocket.close();
+            
       }
     }
 }
