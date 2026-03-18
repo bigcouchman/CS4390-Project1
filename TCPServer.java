@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.util.Date;
 
 class ClientHandler implements Runnable{
     private Socket socket;
@@ -9,6 +10,7 @@ class ClientHandler implements Runnable{
 
     @Override
     public void run(){
+        long startTime = System.currentTimeMillis();
         try{
             BufferedReader clientInput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             DataOutputStream serverOutput = new DataOutputStream(socket.getOutputStream());
@@ -49,8 +51,9 @@ class ClientHandler implements Runnable{
                     serverOutput.writeBytes("Error: Bad format. Must write '1 + 1'\n");
                 }
             }
-
-            System.out.println("LOG: " + clientName + " disconnected.");
+            long endTime = System.currentTimeMillis();
+            long sessionTime = (endTime - startTime) / 1000;
+            System.out.println("LOG: " + clientName + " disconnected. Duration: " + sessionTime + "s");
             socket.close();
         } catch (IOException e){
             System.out.print("Error handling client/");
