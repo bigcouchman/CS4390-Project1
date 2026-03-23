@@ -8,6 +8,42 @@ class ClientHandler implements Runnable{
         this.socket = socket;
     }
 
+    private String solveEquation(String eq){
+        try {
+            String[] parts = eq.split(" ");
+            if (parts.length < 3 || parts.length % 2 == 0){
+                return "Error: Bad format. Must write '1 + 1'\n";
+            }
+            double result = Double.parseDouble(parts[0]);
+            for (int i = 1; i < parts.length; i += 2){
+                String operator = parts[i];
+                double operand = Double.parseDouble(parts[i + 1]);
+                switch (operator){
+                    
+                }
+            }
+            if (operator.equals("+")){
+                        result = num1 + num2;
+                    }
+                    else if (operator.equals("-")){
+                        result = num1 - num2;
+                    }
+                    else if (operator.equals("*")){
+                        result = num1 * num2;
+                    }
+                    else if (operator.equals("/")){
+                        result = num1 / num2;
+                    }
+                    else if (operator.equals("%")){
+                        result = num1 / num2;
+                    }
+
+                    serverOutput.writeBytes("Result: " + result + "\n");
+                } catch (Exception e){
+                    serverOutput.writeBytes("Error: Bad format. Must write '1 + 1'\n");
+                }
+    }
+
     @Override
     public void run(){
         long startTime = System.currentTimeMillis();
@@ -28,10 +64,10 @@ class ClientHandler implements Runnable{
             
                 try {
                     String[] parts = clientEquation.split(" ");
-                    double num1 = Double.parseDouble(parts[0]);
-                    double num2 = Double.parseDouble(parts[2]);
-                    String operator = parts[1];
-                    double result = 0;
+                    if (parts.length < 3 || parts.length % 2 == 0){
+                        return "Error: Bad format. Must write '1 + 1'\n";
+                    }
+                    double result = Double.parseDouble(parts[0]);
 
                     if (operator.equals("+")){
                         result = num1 + num2;
@@ -43,6 +79,9 @@ class ClientHandler implements Runnable{
                         result = num1 * num2;
                     }
                     else if (operator.equals("/")){
+                        result = num1 / num2;
+                    }
+                    else if (operator.equals("%")){
                         result = num1 / num2;
                     }
 
