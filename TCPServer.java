@@ -19,29 +19,33 @@ class ClientHandler implements Runnable{
                 String operator = parts[i];
                 double operand = Double.parseDouble(parts[i + 1]);
                 switch (operator){
-                    
+                    case "+": 
+                        result += operand;
+                        break;
+                    case "-": 
+                        result -= operand;
+                        break;
+                    case "*": 
+                        result *= operand;
+                        break;
+                    case "/": 
+                        if (operand == 0){
+                            return "Error: Cannot divide by zero";
+                        }
+                        result /= operand;
+                        break;
+                    case "%": 
+                        result %= operand;
+                        break;
+                    default:
+                        return "Error: Unknown operator";
                 }
             }
-            if (operator.equals("+")){
-                        result = num1 + num2;
-                    }
-                    else if (operator.equals("-")){
-                        result = num1 - num2;
-                    }
-                    else if (operator.equals("*")){
-                        result = num1 * num2;
-                    }
-                    else if (operator.equals("/")){
-                        result = num1 / num2;
-                    }
-                    else if (operator.equals("%")){
-                        result = num1 / num2;
-                    }
-
-                    serverOutput.writeBytes("Result: " + result + "\n");
-                } catch (Exception e){
-                    serverOutput.writeBytes("Error: Bad format. Must write '1 + 1'\n");
-                }
+            return "Result: " + result;
+            
+            }catch (Exception e){
+               return "Error: Could not calculate";
+            }
     }
 
     @Override
@@ -61,41 +65,15 @@ class ClientHandler implements Runnable{
                     break;
                 }
                 System.out.println("Request from client " + clientName + ": " + clientEquation);
-            
-                try {
-                    String[] parts = clientEquation.split(" ");
-                    if (parts.length < 3 || parts.length % 2 == 0){
-                        return "Error: Bad format. Must write '1 + 1'\n";
-                    }
-                    double result = Double.parseDouble(parts[0]);
-
-                    if (operator.equals("+")){
-                        result = num1 + num2;
-                    }
-                    else if (operator.equals("-")){
-                        result = num1 - num2;
-                    }
-                    else if (operator.equals("*")){
-                        result = num1 * num2;
-                    }
-                    else if (operator.equals("/")){
-                        result = num1 / num2;
-                    }
-                    else if (operator.equals("%")){
-                        result = num1 / num2;
-                    }
-
-                    serverOutput.writeBytes("Result: " + result + "\n");
-                } catch (Exception e){
-                    serverOutput.writeBytes("Error: Bad format. Must write '1 + 1'\n");
-                }
+                String solution = solveEquation(clientEquation);
+                serverOutput.writeBytes(solution + "\n");
             }
             long endTime = System.currentTimeMillis();
             long sessionTime = (endTime - startTime) / 1000;
             System.out.println("LOG: " + clientName + " disconnected. Duration: " + sessionTime + "s");
             socket.close();
         } catch (IOException e){
-            System.out.print("Error handling client/");
+            System.out.print("Error handling client/n");
         }
     }
 }
@@ -104,15 +82,19 @@ class TCPServer {
 
   public static void main(String argv[]) throws Exception
     {
-      ServerSocket welcomeSocket = new ServerSocket(6789);
-
-      while(true) {
+      try(ServerSocket welcomeSocket = new ServerSocket(6789)){
+        while(true) {
             Socket connectionSocket = welcomeSocket.accept();
             ClientHandler handler = new ClientHandler(connectionSocket);
             Thread client = new Thread(handler);
             client.start();
             
+        }
+      } catch (IOException e){
+        System.err.println("Error: " + e.getMessage());
       }
+
+      
     }
 }
 
