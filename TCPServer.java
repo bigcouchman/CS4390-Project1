@@ -1,6 +1,8 @@
 import java.io.*;
 import java.net.*;
 import java.util.Date;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 class ClientHandler implements Runnable{
     private Socket socket;
@@ -51,13 +53,14 @@ class ClientHandler implements Runnable{
     @Override
     public void run(){
         long startTime = System.currentTimeMillis();
+        String arriveTime = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         try{
             BufferedReader clientInput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             DataOutputStream serverOutput = new DataOutputStream(socket.getOutputStream());
 
             String clientName = clientInput.readLine();
             System.out.println("Client " + clientName + " connected.");
-            serverOutput.writeBytes("Welcome client " + clientName + "\n");
+            serverOutput.writeBytes("Welcome client " + clientName + ", you joined at time: " + arriveTime + "\n");
 
             String clientEquation;
             while ((clientEquation = clientInput.readLine()) != null){
@@ -70,7 +73,7 @@ class ClientHandler implements Runnable{
             }
             long endTime = System.currentTimeMillis();
             long sessionTime = (endTime - startTime) / 1000;
-            System.out.println("LOG: " + clientName + " disconnected. Duration: " + sessionTime + "s");
+            System.out.println("Client " + clientName + " disconnected. Duration: " + sessionTime + "s");
             socket.close();
         } catch (IOException e){
             System.out.print("Error handling client/n");
