@@ -30,6 +30,8 @@ class TCPClient {
 
         for (int i = 0; i < 3; i++){
           Thread.sleep(1000);
+
+          System.out.print("\nEnter equation: ");
           sentence = inFromUser.readLine();
           
           System.out.println("Sending Equation: " + sentence);
