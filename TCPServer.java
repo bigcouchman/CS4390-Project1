@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.Date;
+import java.util.Stack;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -10,43 +11,96 @@ class ClientHandler implements Runnable{
         this.socket = socket;
     }
 
+    private double operation(double num1, String op, double num2){
+        switch(op){
+            case "+":
+                return num1 + num2;
+            case "-":
+                return num1 - num2;
+            case "*":
+                return num1 * num2;
+            case "/":
+                if (num2 == 0){
+                    throw new ArithmeticException("Error: Cannot divide by zero.");
+                }
+                return num1 / num2;
+            case "%":
+                return num1 % num2;
+            case "^":
+                return Math.pow(num1, num2);
+        }
+        return 0;
+    }
+
+    private boolean checkPrecedence(String o1, String o2){
+        if (o1.equals("(") || o2.equals(")")){
+            return false;
+        }
+        int o1Prior = priorityCheck(o1);
+        int o2Prior = priorityCheck(o2);
+        if (o1.equals("^") && o2.equals("^")){
+            return false;
+        }
+        return o1Prior >= o2Prior;
+    }
+
+    private int priorityCheck(String operator){
+         switch(operator){
+            case "+":
+                return 1;
+            case "-":
+                return 1;
+            case "*":
+                return 2;
+            case "/":
+                return 2;
+            case "%":
+                return 2;
+            case "^":
+                return 3;
+            default:
+                return 0;
+        }
+    }
+
     private String solveEquation(String eq){
         try {
-            String[] parts = eq.split(" ");
-            if (parts.length < 3 || parts.length % 2 == 0){
+            String[] toks = eq.split(" ");
+            Stack<Double> operands = new Stack<>();
+            Stack<String> operators = new Stack<>();
+            if (toks.length < 3 || toks.length % 2 == 0){
                 return "Error: Bad format. Must write '1 + 1'\n";
             }
-            double result = Double.parseDouble(parts[0]);
-            for (int i = 1; i < parts.length; i += 2){
-                String operator = parts[i];
-                double operand = Double.parseDouble(parts[i + 1]);
-                switch (operator){
-                    case "+": 
-                        result += operand;
-                        break;
-                    case "-": 
-                        result -= operand;
-                        break;
-                    case "*": 
-                        result *= operand;
-                        break;
-                    case "/": 
-                        if (operand == 0){
-                            return "Error: Cannot divide by zero";
-                        }
-                        result /= operand;
-                        break;
-                    case "%": 
-                        result %= operand;
-                        break;
-                    default:
-                        return "Error: Unknown operator";
+            for (String t : toks){
+                if (t.isEmpty()){
+                    continue;
                 }
+                if (t.matches("-?\\d+(\\.\\d+)?")){
+                    operands.push(Double.parseDouble(t));
+                } 
+                else if ("+-*/%^".contains(t)){
+                    while(!operators.isEmpty() && checkPrecedence(t, operators.peek())){
+                        operands.push(operation(operands.pop(), operators.pop(), operands.pop()));
+                    }
+                    operators.push(t);
+                }
+                else if (t.equals("(")){
+                    operators.push(t);
+                }
+                else if (t.equals(")")){
+                    while (!operators.isEmpty() && !operators.peek().equals("(")){
+                        operands.push(operation(operands.pop(), operators.pop(), operands.pop()));
+                    }
+                    operators.pop();
+                } 
             }
-            return "Result: " + result;
+            while (!operators.isEmpty()){
+                operands.push(operation(operands.pop(), operators.pop(), operands.pop()));
+            }
+            return "Result: " + operands.pop();
             
             }catch (Exception e){
-               return "Error: Could not calculate";
+               return "Error: Could not calculate due to invalid format, must use spaces. Ex: 1 + ( 1 * 3 )";
             }
     }
 
