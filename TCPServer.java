@@ -11,15 +11,16 @@ class ClientHandler implements Runnable{
         this.socket = socket;
     }
 
+    // Math performing function with 2 operands and 1 operator
     private double operation(double num1, String op, double num2){
         switch(op){
-            case "+":
+            case "+":                   // Add operation
                 return num1 + num2;
-            case "-":
+            case "-":                   // Subtract operation
                 return num1 - num2;
-            case "*":
+            case "*":                   // Multiply operation
                 return num1 * num2;
-            case "/":
+            case "/":                   // Divide operation
                 if (num2 == 0){
                     throw new ArithmeticException("Error: Cannot divide by zero.");
                 }
@@ -32,6 +33,7 @@ class ClientHandler implements Runnable{
         return 0;
     }
 
+    // Check precendence of operators
     private boolean checkPrecedence(String o1, String o2){
         if (o1.equals("(") || o2.equals(")")){
             return false;
@@ -44,6 +46,7 @@ class ClientHandler implements Runnable{
         return o1Prior >= o2Prior;
     }
 
+    // Assign priority on operator to check for later
     private int priorityCheck(String operator){
          switch(operator){
             case "+":
@@ -63,6 +66,7 @@ class ClientHandler implements Runnable{
         }
     }
 
+    // Equation solving function using Shunting yards
     private String solveEquation(String eq){
         try {
             String[] toks = eq.split(" ");
@@ -104,6 +108,7 @@ class ClientHandler implements Runnable{
             }
     }
 
+    // Defining format of the server
     @Override
     public void run(){
         long startTime = System.currentTimeMillis();
@@ -135,8 +140,8 @@ class ClientHandler implements Runnable{
     }
 }
 
+// Main function 
 class TCPServer {
-
   public static void main(String argv[]) throws Exception
     {
       try(ServerSocket welcomeSocket = new ServerSocket(6789)){
