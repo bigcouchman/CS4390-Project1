@@ -43,7 +43,7 @@ class ClientHandler implements Runnable{
         if (o1.equals("^") && o2.equals("^")){
             return false;
         }
-        return o1Prior >= o2Prior;
+        return o2Prior >= o1Prior;
     }
 
     // Assign priority on operator to check for later
@@ -72,6 +72,8 @@ class ClientHandler implements Runnable{
             String[] toks = eq.split(" ");
             Stack<Double> operands = new Stack<>();
             Stack<String> operators = new Stack<>();
+            double val2;
+            double val1;
             if (toks.length < 3 || toks.length % 2 == 0){
                 return "Error: Bad format. Must write '1 + 1'\n";
             }
@@ -84,7 +86,9 @@ class ClientHandler implements Runnable{
                 } 
                 else if ("+-*/%^".contains(t)){
                     while(!operators.isEmpty() && checkPrecedence(t, operators.peek())){
-                        operands.push(operation(operands.pop(), operators.pop(), operands.pop()));
+                        val2 = operands.pop();
+                        val1 = operands.pop();
+                        operands.push(operation(val1, operators.pop(), val2));
                     }
                     operators.push(t);
                 }
@@ -93,13 +97,17 @@ class ClientHandler implements Runnable{
                 }
                 else if (t.equals(")")){
                     while (!operators.isEmpty() && !operators.peek().equals("(")){
-                        operands.push(operation(operands.pop(), operators.pop(), operands.pop()));
+                        val2 = operands.pop();
+                        val1 = operands.pop();
+                        operands.push(operation(val1, operators.pop(), val2));
                     }
                     operators.pop();
                 } 
             }
             while (!operators.isEmpty()){
-                operands.push(operation(operands.pop(), operators.pop(), operands.pop()));
+                val2 = operands.pop();
+                val1 = operands.pop();
+                operands.push(operation(val1, operators.pop(), val2));
             }
             return "Result: " + operands.pop();
             
@@ -135,7 +143,7 @@ class ClientHandler implements Runnable{
             System.out.println("Client " + clientName + " disconnected. Duration: " + sessionTime + "s");
             socket.close();
         } catch (IOException e){
-            System.out.print("Error handling client/n");
+            System.out.print("Error handling client\n");
         }
     }
 }
