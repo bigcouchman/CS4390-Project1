@@ -1,10 +1,13 @@
+// CS 4390 Math Networking Project by Nguyen Do (npd220001) Server logic
+
+// Import libraries
 import java.io.*;
 import java.net.*;
-import java.util.Date;
 import java.util.Stack;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+// Create Client handler class via a welcoming socket
 class ClientHandler implements Runnable{
     private Socket socket;
     public ClientHandler(Socket socket){
@@ -35,9 +38,11 @@ class ClientHandler implements Runnable{
 
     // Check precendence of operators
     private boolean checkPrecedence(String o1, String o2){
-        if (o1.equals("(") || o2.equals(")")){
+        // Check if 2nd operator is either a parentheses or both operators are exponential
+        if (o2.equals("(") || o2.equals(")")){
             return false;
         }
+        // Check priority of each operator
         int o1Prior = priorityCheck(o1);
         int o2Prior = priorityCheck(o2);
         if (o1.equals("^") && o2.equals("^")){
@@ -66,51 +71,71 @@ class ClientHandler implements Runnable{
         }
     }
 
-    // Equation solving function using Shunting yards
+    // Equation solving function using Shunting yards (my version)
     private String solveEquation(String eq){
+        // Store operands and operators in stacks
+        Stack<Double> operands = new Stack<>();
+        Stack<String> operators = new Stack<>();
         try {
+            // I will clarify the formatting of equations in the report 
             String[] toks = eq.split(" ");
-            Stack<Double> operands = new Stack<>();
-            Stack<String> operators = new Stack<>();
+            
+            // Take an equation and gather tokens (separated by spaces)
             double val2;
             double val1;
-            if (toks.length < 3 || toks.length % 2 == 0){
-                return "Error: Bad format. Must write '1 + 1'\n";
-            }
             for (String t : toks){
+                // Check if a token is empty
                 if (t.isEmpty()){
                     continue;
                 }
+
+                // Check if a token is a number
                 if (t.matches("-?\\d+(\\.\\d+)?")){
                     operands.push(Double.parseDouble(t));
                 } 
+
+                // check if a token is an operator, pop 2 operands (numbers) and perform calculation
                 else if ("+-*/%^".contains(t)){
                     while(!operators.isEmpty() && checkPrecedence(t, operators.peek())){
                         val2 = operands.pop();
                         val1 = operands.pop();
                         operands.push(operation(val1, operators.pop(), val2));
                     }
+                    // Other than that, push the token to the stack
                     operators.push(t);
                 }
+                // Handles parentheses
                 else if (t.equals("(")){
                     operators.push(t);
                 }
                 else if (t.equals(")")){
+                    // For closing parentheses, finish the operation
                     while (!operators.isEmpty() && !operators.peek().equals("(")){
                         val2 = operands.pop();
                         val1 = operands.pop();
                         operands.push(operation(val1, operators.pop(), val2));
                     }
                     operators.pop();
+                }
+                // If the token is unknown show error
+                else {
+                    return "Error: Unknown token '" + t + "'";
                 } 
             }
+            // pop out remaining characters as long as there are remaining operators
             while (!operators.isEmpty()){
                 val2 = operands.pop();
                 val1 = operands.pop();
                 operands.push(operation(val1, operators.pop(), val2));
             }
+            // If there is a format error
+            if (operands.size() != 1){
+                return "Error: Invalid equation format";
+            }
+            // Return result
             return "Result: " + operands.pop();
             
+            // Catch other formatting exception
             }catch (Exception e){
                return "Error: Could not calculate due to invalid format, must use spaces. Ex: 1 + ( 1 * 3 )";
             }
@@ -119,29 +144,37 @@ class ClientHandler implements Runnable{
     // Defining format of the server
     @Override
     public void run(){
+        // Variables to log time and date of clients
         long startTime = System.currentTimeMillis();
-        String arriveTime = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+        String arriveTime = LocalDateTime.now().format(dateFormat);
         try{
-            BufferedReader clientInput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            DataOutputStream serverOutput = new DataOutputStream(socket.getOutputStream());
+            // Keep track of input and ouput streams
+            BufferedReader inFromUser = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            DataOutputStream outToServer = new DataOutputStream(socket.getOutputStream());
 
-            String clientName = clientInput.readLine();
-            System.out.println("Client " + clientName + " connected.");
-            serverOutput.writeBytes("Welcome client " + clientName + ", you joined at time: " + arriveTime + "\n");
+            // When a client join, track times and dates joined
+            String client = inFromUser.readLine();
+            System.out.println("Client " + client + " connected at " + arriveTime + ".");
+            outToServer.writeBytes("Welcome client " + client + ", you joined at time: " + arriveTime + "\n");
 
-            String clientEquation;
-            while ((clientEquation = clientInput.readLine()) != null){
-                if (clientEquation.equalsIgnoreCase("QUIT")){
+            // Handles equation request from client
+            String clientReq;
+            while ((clientReq = inFromUser.readLine()) != null){
+                if (clientReq.equalsIgnoreCase("QUIT")){
                     break;
                 }
-                System.out.println("Request from client " + clientName + ": " + clientEquation);
-                String solution = solveEquation(clientEquation);
-                serverOutput.writeBytes(solution + "\n");
+                System.out.println("Request from client " + client + ": " + clientReq);
+                String solution = solveEquation(clientReq);
+                outToServer.writeBytes(solution + "\n");
             }
+            // Log time and date that the client leaves the connection
             long endTime = System.currentTimeMillis();
-            long sessionTime = (endTime - startTime) / 1000;
-            System.out.println("Client " + clientName + " disconnected. Duration: " + sessionTime + "s");
+            long duration = (endTime - startTime) / 1000;
+            String leaveTime = LocalDateTime.now().format(dateFormat);
+            System.out.println("Client " + client + " disconnected at " + leaveTime + ". Duration: " + duration + "s");
             socket.close();
+            // Error handling
         } catch (IOException e){
             System.out.print("Error handling client\n");
         }
@@ -152,19 +185,18 @@ class ClientHandler implements Runnable{
 class TCPServer {
   public static void main(String argv[]) throws Exception
     {
+        // Create welcoming socket for each client
       try(ServerSocket welcomeSocket = new ServerSocket(6789)){
         while(true) {
             Socket connectionSocket = welcomeSocket.accept();
             ClientHandler handler = new ClientHandler(connectionSocket);
             Thread client = new Thread(handler);
-            client.start();
-            
+            client.start();        
         }
+        // Error handling
       } catch (IOException e){
         System.err.println("Error: " + e.getMessage());
-      }
-
-      
+      } 
     }
 }
 
