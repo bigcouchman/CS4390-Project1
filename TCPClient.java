@@ -59,7 +59,6 @@ class TCPClient {
           }
 
           // When the client completes, terminate its connection and close the client
-            System.out.println("Terminating?");
             outToServer.writeBytes("QUIT\n");
           
             clientSocket.close();
@@ -67,7 +66,7 @@ class TCPClient {
             String leaveTime = LocalDateTime.now().format(dateFormat);
             long endTime = System.currentTimeMillis();
             long sessionTime = (endTime - startTime) / 1000;
-            System.out.println("Connection closed at " + leaveTime + ". Duration: " + sessionTime);
+            System.out.println("Connection closed at " + leaveTime + ". Duration: " + sessionTime + "s");
           // Error handling
           } catch (ConnectException e) {
             System.err.println("Error: TCPServer is not connected properly.");
