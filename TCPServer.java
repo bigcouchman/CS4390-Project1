@@ -92,7 +92,7 @@ class ClientHandler implements Runnable {
 
             // Expect JOIN
             String joinMsg = in.readLine();
-            String clientName = joinMsg.split(" ")[1];
+            String clientName = joinMsg.substring(5).trim();
 
             System.out.println("[" + connectTime + "] " + clientName + " connected.");
             out.writeBytes("ACK Connected at " + connectTime + "\n");
