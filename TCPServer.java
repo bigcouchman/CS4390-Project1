@@ -1,202 +1,145 @@
-// CS 4390 Math Networking Project by Nguyen Do (npd220001) Server logic
+// CS 4390 Math Networking Project by Nguyen Do (npd220001) and Jeremiah Boban (jxb220076)
+// Server logic
 
 // Import libraries
 import java.io.*;
 import java.net.*;
-import java.util.Stack;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.*;
 
-// Create Client handler class via a welcoming socket
-class ClientHandler implements Runnable{
-    private Socket socket;
-    public ClientHandler(Socket socket){
-        this.socket = socket;
+// Request object for queue
+class Request {
+    String clientName;
+    String equation;
+    DataOutputStream output;
+
+    public Request(String clientName, String equation, DataOutputStream output) {
+        this.clientName = clientName;
+        this.equation = equation;
+        this.output = output;
+    }
+}
+
+// Worker thread (processes requests in order)
+class RequestProcessor implements Runnable {
+    private BlockingQueue<Request> queue;
+
+    public RequestProcessor(BlockingQueue<Request> queue) {
+        this.queue = queue;
     }
 
-    // Math performing function with 2 operands and 1 operator
-    private double operation(double num1, String op, double num2){
-        switch(op){
-            case "+":                   // Add operation
-                return num1 + num2;
-            case "-":                   // Subtract operation
-                return num1 - num2;
-            case "*":                   // Multiply operation
-                return num1 * num2;
-            case "/":                   // Divide operation
-                if (num2 == 0){
-                    throw new ArithmeticException("Error: Cannot divide by zero.");
-                }
-                return num1 / num2;
-            case "%":
-                return num1 % num2;
-            case "^":
-                return Math.pow(num1, num2);
-        }
-        return 0;
-    }
-
-    // Check precendence of operators
-    private boolean checkPrecedence(String o1, String o2){
-        // Check if 2nd operator is either a parentheses or both operators are exponential
-        if (o2.equals("(") || o2.equals(")")){
-            return false;
-        }
-        // Check priority of each operator
-        int o1Prior = priorityCheck(o1);
-        int o2Prior = priorityCheck(o2);
-        if (o1.equals("^") && o2.equals("^")){
-            return false;
-        }
-        return o2Prior >= o1Prior;
-    }
-
-    // Assign priority on operator to check for later
-    private int priorityCheck(String operator){
-         switch(operator){
-            case "+":
-                return 1;
-            case "-":
-                return 1;
-            case "*":
-                return 2;
-            case "/":
-                return 2;
-            case "%":
-                return 2;
-            case "^":
-                return 3;
-            default:
-                return 0;
-        }
-    }
-
-    // Equation solving function using Shunting yards (my version)
-    private String solveEquation(String eq){
-        // Store operands and operators in stacks
-        Stack<Double> operands = new Stack<>();
-        Stack<String> operators = new Stack<>();
+    private String solveEquation(String eq) {
         try {
-            // I will clarify the formatting of equations in the report 
-            String[] toks = eq.split(" ");
-            
-            // Take an equation and gather tokens (separated by spaces)
-            double val2;
-            double val1;
-            for (String t : toks){
-                // Check if a token is empty
-                if (t.isEmpty()){
-                    continue;
-                }
+            String[] parts = eq.split(" ");
+            double result = Double.parseDouble(parts[0]);
 
-                // Check if a token is a number
-                if (t.matches("-?\\d+(\\.\\d+)?")){
-                    operands.push(Double.parseDouble(t));
-                } 
+            for (int i = 1; i < parts.length; i += 2) {
+                String op = parts[i];
+                double num = Double.parseDouble(parts[i + 1]);
 
-                // check if a token is an operator, pop 2 operands (numbers) and perform calculation
-                else if ("+-*/%^".contains(t)){
-                    while(!operators.isEmpty() && checkPrecedence(t, operators.peek())){
-                        val2 = operands.pop();
-                        val1 = operands.pop();
-                        operands.push(operation(val1, operators.pop(), val2));
-                    }
-                    // Other than that, push the token to the stack
-                    operators.push(t);
+                switch (op) {
+                    case "+": result += num; break;
+                    case "-": result -= num; break;
+                    case "*": result *= num; break;
+                    case "/":
+                        if (num == 0) return "Error: Divide by zero";
+                        result /= num;
+                        break;
+                    default: return "Error: Unknown operator";
                 }
-                // Handles parentheses
-                else if (t.equals("(")){
-                    operators.push(t);
-                }
-                else if (t.equals(")")){
-                    // For closing parentheses, finish the operation
-                    while (!operators.isEmpty() && !operators.peek().equals("(")){
-                        val2 = operands.pop();
-                        val1 = operands.pop();
-                        operands.push(operation(val1, operators.pop(), val2));
-                    }
-                    operators.pop();
-                }
-                // If the token is unknown show error
-                else {
-                    return "Error: Unknown token '" + t + "'";
-                } 
             }
-            // pop out remaining characters as long as there are remaining operators
-            while (!operators.isEmpty()){
-                val2 = operands.pop();
-                val1 = operands.pop();
-                operands.push(operation(val1, operators.pop(), val2));
-            }
-            // If there is a format error
-            if (operands.size() != 1){
-                return "Error: Invalid equation format";
-            }
-            // Return result
-            return "Result: " + operands.pop();
-            
-            // Catch other formatting exception
-            }catch (Exception e){
-               return "Error: Could not calculate due to invalid format, must use spaces. Ex: 1 + ( 1 * 3 )";
-            }
+            return "RESULT " + result;
+        } catch (Exception e) {
+            return "Error: Invalid expression";
+        }
     }
 
-    // Defining format of the server
     @Override
-    public void run(){
-        // Variables to log time and date of clients
-        long startTime = System.currentTimeMillis();
-        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-        String arriveTime = LocalDateTime.now().format(dateFormat);
-        try{
-            // Keep track of input and ouput streams
-            BufferedReader inFromUser = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            DataOutputStream outToServer = new DataOutputStream(socket.getOutputStream());
+    public void run() {
+        while (true) {
+            try {
+                Request req = queue.take(); // FIFO
+                System.out.println("Processing [" + req.clientName + "]: " + req.equation);
 
-            // When a client join, track times and dates joined
-            String client = inFromUser.readLine();
-            System.out.println("Client " + client + " connected at " + arriveTime + ".");
-            outToServer.writeBytes("Welcome client " + client + ", you joined at time: " + arriveTime + "\n");
+                String result = solveEquation(req.equation);
+                req.output.writeBytes(result + "\n");
 
-            // Handles equation request from client
-            String clientReq;
-            while ((clientReq = inFromUser.readLine()) != null){
-                if (clientReq.equalsIgnoreCase("QUIT")){
-                    break;
-                }
-                System.out.println("Request from client " + client + ": " + clientReq);
-                String solution = solveEquation(clientReq);
-                outToServer.writeBytes(solution + "\n");
+            } catch (Exception e) {
+                System.out.println("Processing error");
             }
-            // Log time and date that the client leaves the connection
+        }
+    }
+}
+
+class ClientHandler implements Runnable {
+    private Socket socket;
+    private BlockingQueue<Request> queue;
+
+    public ClientHandler(Socket socket, BlockingQueue<Request> queue) {
+        this.socket = socket;
+        this.queue = queue;
+    }
+
+    @Override
+    public void run() {
+        long startTime = System.currentTimeMillis();
+        String connectTime = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+            // Expect JOIN
+            String joinMsg = in.readLine();
+            String clientName = joinMsg.split(" ")[1];
+
+            System.out.println("[" + connectTime + "] " + clientName + " connected.");
+            out.writeBytes("ACK Connected at " + connectTime + "\n");
+
+            String msg;
+            while ((msg = in.readLine()) != null) {
+
+                if (msg.equalsIgnoreCase("EXIT")) break;
+
+                if (msg.startsWith("CALC")) {
+                    String equation = msg.substring(5);
+
+                    System.out.println("Received from " + clientName + ": " + equation);
+
+                    queue.put(new Request(clientName, equation, out));
+                }
+            }
+
             long endTime = System.currentTimeMillis();
+            String disconnectTime = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
             long duration = (endTime - startTime) / 1000;
-            String leaveTime = LocalDateTime.now().format(dateFormat);
-            System.out.println("Client " + client + " disconnected at " + leaveTime + ". Duration: " + duration + "s");
+
+            System.out.println("[" + disconnectTime + "] " + clientName +
+                    " disconnected. Duration: " + duration + "s");
+
             socket.close();
-            // Error handling
-        } catch (IOException e){
-            System.out.print("Error handling client\n");
+
+        } catch (Exception e) {
+            System.out.println("Client error");
         }
     }
 }
 
-// Main function 
-class TCPServer {
-  public static void main(String argv[]) throws Exception
-    {
-        // Create welcoming socket for each client
-      try(ServerSocket welcomeSocket = new ServerSocket(6789)){
-        while(true) {
-            Socket connectionSocket = welcomeSocket.accept();
-            ClientHandler handler = new ClientHandler(connectionSocket);
-            Thread client = new Thread(handler);
-            client.start();        
+public class TCPServer {
+    public static void main(String[] args) throws Exception {
+
+        ServerSocket serverSocket = new ServerSocket(6789);
+        BlockingQueue<Request> queue = new LinkedBlockingQueue<>();
+
+        // Start processor thread
+        new Thread(new RequestProcessor(queue)).start();
+
+        System.out.println("Server started...");
+
+        while (true) {
+            Socket clientSocket = serverSocket.accept();
+            new Thread(new ClientHandler(clientSocket, queue)).start();
         }
-        // Error handling
-      } catch (IOException e){
-        System.err.println("Error: " + e.getMessage());
-      } 
     }
 }
-
