@@ -1,53 +1,54 @@
+// CS 4390 Math Networking Project by Nguyen Do (npd220001) and Jeremiah Boban (jxb220076)
+// Client logic
+
+// Import libraries
 import java.io.*;
 import java.net.*;
+
 class TCPClient {
+    public static void main(String argv[]) throws Exception {
 
-    public static void main(String argv[]) throws Exception
-    {
-        String sentence;
-        String modifiedSentence;
-        System.out.println("Client is running: " );
+        // Create socket connection to server
+        Socket socket = new Socket("127.0.0.1", 6789);
 
-        Socket clientSocket = new Socket("127.0.0.1", 6789);
+        // Setup input/output streams
+        BufferedReader userInput = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader serverInput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        DataOutputStream serverOutput = new DataOutputStream(socket.getOutputStream());
 
-        BufferedReader inFromUser =
-          new BufferedReader(new InputStreamReader(System.in));
+        // Get client name and send JOIN request
+        System.out.print("Enter your name: ");
+        String name = userInput.readLine();
+        serverOutput.writeBytes("JOIN " + name + "\n");
 
-        BufferedReader inFromServer =
-                new BufferedReader(new
-                InputStreamReader(clientSocket.getInputStream()));
+        // Wait for server acknowledgement
+        String response = serverInput.readLine();
+        System.out.println("Server: " + response);
 
-        DataOutputStream outToServer =
-          new DataOutputStream(clientSocket.getOutputStream());
-        
+        // Send 3 math equations with random delays
+        for (int i = 0; i < 3; i++) {
 
-        System.out.println("Enter your name: ");
-        String name = inFromUser.readLine();
-        outToServer.writeBytes(name + '\n');
+            // Random delay to simulate real client behavior
+            Thread.sleep((int)(Math.random() * 3000));
 
-        String welcome = inFromServer.readLine();
-        System.out.println("Server: " + welcome);
+            // Read equation from user
+            System.out.print("Enter equation (e.g., 5 + 3): ");
+            String eq = userInput.readLine();
 
-        for (int i = 0; i < 3; i++){
-          Thread.sleep(1000);
+            // Send calculation request to server
+            serverOutput.writeBytes("CALC " + eq + "\n");
 
-          System.out.print("\nEnter equation: ");
-          sentence = inFromUser.readLine();
-          
-          System.out.println("Sending Equation: " + sentence);
-          outToServer.writeBytes(sentence + '\n');
-
-          modifiedSentence = inFromServer.readLine();
-
-          System.out.println("FROM SERVER: " + modifiedSentence);
+            // Receive result from server
+            String result = serverInput.readLine();
+            System.out.println("Server: " + result);
         }
-          System.out.println("Terminating?");
-          outToServer.writeBytes("QUIT\n");
-          
-          clientSocket.close();
-          System.out.println("Connection closed");
 
-            
+        // Send EXIT request to terminate connection
+        serverOutput.writeBytes("EXIT\n");
 
-          }
-      }
+        // Close socket connection
+        socket.close();
+
+        System.out.println("Disconnected.");
+    }
+}
