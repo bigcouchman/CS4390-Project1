@@ -5,15 +5,15 @@ CLIENT = TCPClient
 
 # Compile all program files
 all:
-  $(JAVAC) $(SERVER).java $(CLIENT).java
+    $(JAVAC) $(SERVER).java $(CLIENT).java
 
 # Remove compiled class
 clean:
-  rm -f *.class
+    rm -f *.class
 
 # Run classes for the client and server
 run-server:
-  java $(SERVER)
+    java $(SERVER)
 
 run-client:
-  java $(CLIENT)
+    java $(CLIENT)
