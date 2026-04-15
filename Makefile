@@ -9,11 +9,11 @@ all:
 
 # Remove compiled class
 clean:
-    rm -f *.class
+	  rm -f *.class
 
 # Run classes for the client and server
 run-server:
-    java $(SERVER)
+	  java $(SERVER)
 
 run-client:
-    java $(CLIENT)
+	  java $(CLIENT)
