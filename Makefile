@@ -5,6 +5,7 @@ CLIENT = TCPClient
 
 # Compile all program files
 all:
+<<<<<<< HEAD
 	javac *.java
 
 # Remove compiled class
@@ -17,3 +18,17 @@ run-server:
 
 run-client:
 	java $(CLIENT)
+=======
+    $(JAVAC) $(SERVER).java $(CLIENT).java
+
+# Remove compiled class
+clean:
+    rm -f *.class
+
+# Run classes for the client and server
+run-server:
+    java $(SERVER)
+
+run-client:
+    java $(CLIENT)
+>>>>>>> nguyen-branch

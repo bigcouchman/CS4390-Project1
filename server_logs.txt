@@ -1,0 +1,20 @@
+[2026/04/15 10:03:41] JOIN: Nguyen Do
+[2026/04/15 10:04:00] REQUEST from Nguyen Do: 4 + 5 - 3 * 2
+[2026/04/15 10:04:15] REQUEST from Nguyen Do: 12 * 12 - ( 4 + 4 )
+[2026/04/15 10:04:37] JOIN: Jeremiah Boban
+[2026/04/15 10:04:47] REQUEST from Jeremiah Boban: 4 + 6 ^ 2
+[2026/04/15 10:04:54] REQUEST from Jeremiah Boban: 5 a 30 b
+[2026/04/15 10:05:01] REQUEST from Jeremiah Boban: 3 + 3 * 2
+[2026/04/15 10:05:08] QUIT: Jeremiah Boban. Duration: 30s
+[2026/04/15 10:05:17] REQUEST from Nguyen Do: 4
+[2026/04/15 10:05:20] QUIT: Nguyen Do. Duration: 98s
+[2026/04/15 11:07:34] JOIN: Nguyen Do
+[2026/04/15 11:07:50] REQUEST from Nguyen Do: 3 + 4 - 2 * 12
+[2026/04/15 11:08:04] REQUEST from Nguyen Do: 5 ^ ( 2 + 1 )
+[2026/04/15 11:08:10] JOIN: Jeremiah Boban
+[2026/04/15 11:08:20] REQUEST from Jeremiah Boban: 5 4 a
+[2026/04/15 11:08:30] REQUEST from Jeremiah Boban: 54 - 38 * 1.2
+[2026/04/15 11:09:25] REQUEST from Jeremiah Boban: 4 % 3 - 1
+[2026/04/15 11:09:30] QUIT: Jeremiah Boban. Duration: 79s
+[2026/04/15 11:09:45] REQUEST from Nguyen Do: 5 % 3 + ( 2 * 2 )
+[2026/04/15 11:09:50] QUIT: Nguyen Do. Duration: 136s
