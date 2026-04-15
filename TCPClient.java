@@ -1,4 +1,5 @@
-// CS 4390 Math Networking Project by Nguyen Do (npd220001) Client logic
+// CS 4390 Math Networking Project by Nguyen Do (npd220001) and Jeremiah Boban (jxb220076) 
+// Client logic
 
 // Import libraries
 import java.io.*;
