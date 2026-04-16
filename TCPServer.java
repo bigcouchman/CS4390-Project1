@@ -1,3 +1,4 @@
+
 // CS 4390 Math Networking Project by Nguyen Do (npd220001) and Jeremiah Boban (jxb220076) Server logic
 // The main algorithms are applying a blocking queue to solve client requests at a FIFO order, and use
 // Shunting Yard algorithm to solve these equations
@@ -266,4 +267,3 @@ class TCPServer {
       } 
     }
 }
-
