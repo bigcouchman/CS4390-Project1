@@ -26,6 +26,7 @@ class Request {
     }
 }
 
+
 // Request queue to apply FIFO order for every requests
 class RequestQueue implements Runnable {
     // We find BlockingQueue to be most effective at enforcing the FIFO order
@@ -168,9 +169,18 @@ class RequestQueue implements Runnable {
             // Get a request from the queue, solve the equation
             try{
                 Request req = queue.take();
+                Thread.sleep(1000);
                 System.out.println("Request from client " + req.client + ": " + req.equation);
                 String solution = solveEquation(req.equation);
                 req.output.writeBytes(solution + "\n");
+                // Log the server response to the log
+                try (PrintWriter out = new PrintWriter(new FileWriter("server_logs.txt", true))){
+                    String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
+                    out.println("[" + time + "] RESPONSE TO " + req.client + ": " + solution);
+                }
+                catch (IOException e){
+                    System.err.println("Error: Could not write in log");
+                }
             }
             // If there are any error, catch the error
             catch (Exception e){
@@ -251,7 +261,16 @@ class ClientHandler implements Runnable{
 class TCPServer {
   public static void main(String argv[]) throws Exception
     {
+    // Log the server starting up and open for connection
+      try (PrintWriter out = new PrintWriter(new FileWriter("server_logs.txt", true))){
+        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
+        out.println("[" + time + "] SERVER START: Server is opened for connection.");
+      }
+      catch (IOException e){
+        System.err.println("Error: Could not write in log");
+      }
         // Create a blocking queue to enforce FIFO order in clients
+      System.out.println("Server is opened for connection...");
       BlockingQueue<Request> bQueue = new LinkedBlockingQueue<>();
       new Thread(new RequestQueue(bQueue)).start();
         // Create welcoming socket for each client
